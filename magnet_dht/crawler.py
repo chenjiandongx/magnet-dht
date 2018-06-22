@@ -10,16 +10,29 @@ from multiprocessing import Process, cpu_count
 
 import bencoder
 
-from magnet_dht.config import (
-    BOOTSTRAP_NODES,
-    MAX_NODE_QSIZE,
-    UDP_RECV_BUFFSIZE,
-    SERVER_HOST,
-    SERVER_PORT,
-    MAGNET_PER,
-    PER_NID_LEN,
-    SLEEP_TIME,
-)
+# 服务器 tracker
+BOOTSTRAP_NODES = [
+    ("router.bittorrent.com", 6881),
+    ("dht.transmissionbt.com", 6881),
+    ("router.utorrent.com", 6881),
+]
+
+# 双端队列容量
+MAX_NODE_QSIZE = 10000
+# UDP 报文 buffsize
+UDP_RECV_BUFFSIZE = 65536
+# 服务 host
+SERVER_HOST = "0.0.0.0"
+# 服务端口
+SERVER_PORT = 9090
+# 磁力链接前缀
+MAGNET_PER = "magnet:?xt=urn:btih:{}"
+# while 循环休眠时间
+SLEEP_TIME = 0
+# 节点 id 长度
+PER_NID_LEN = 20
+
+
 from magnet_dht.utils import (
     get_logger,
     get_nodes_info,

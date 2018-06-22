@@ -24,12 +24,19 @@ rd = RedisClient()
 
 
 def get_magnets():
+    """
+    获取磁力链接
+    """
     mgs = rd.get_magnets(MAX_MAGNETS)
     for m in mgs:
+        # 解码成字符串
         yield m.decode()
 
 
 def exec_cmd(magnet):
+    """
+    执行命令行操作
+    """
     subprocess.call(
         CMD.format(
             save_path=SAVE_PATH,

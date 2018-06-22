@@ -3,13 +3,16 @@
 
 import redis
 
-from magnet_dht.config import (
-    REDIS_KEY,
-    REDIS_PORT,
-    REDIS_PASSWORD,
-    REDIS_HOST,
-    REDIS_MAX_CONNECTION,
-)
+# redis key
+REDIS_KEY = "magnets"
+# redis 地址
+REDIS_HOST = "localhost"
+# redis 端口
+REDIS_PORT = 6379
+# redis 密码
+REDIS_PASSWORD = None
+# redis 连接池最大连接量
+REDIS_MAX_CONNECTION = 20
 
 
 class RedisClient:

@@ -6,8 +6,15 @@ import logging
 from struct import unpack
 from socket import inet_ntoa
 
-from .config import PER_NODE_LEN, PER_NID_LEN, PER_NID_NIP_LEN, NEIGHBOR_END
-
+# 每个节点长度
+PER_NODE_LEN = 26
+# 节点 id 长度
+PER_NID_LEN = 20
+# 节点 id 和 ip 长度
+PER_NID_NIP_LEN = 24
+# 构造邻居随机结点
+NEIGHBOR_END = 10
+# 日志等级
 LOG_LEVEL = logging.INFO
 
 
