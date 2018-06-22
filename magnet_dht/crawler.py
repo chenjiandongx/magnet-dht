@@ -29,6 +29,7 @@ class HNode:
     """
     DHT 节点类
     """
+
     def __init__(self, nid, ip=None, port=None):
         self.nid = nid
         self.ip = ip
@@ -39,6 +40,7 @@ class DHTClient(Thread):
     """
     DHT 客户端类，继承自 Thread 类，负责发送请求。
     """
+
     def __init__(self, bind_ip, bind_port):
         Thread.__init__(self)
         self.bind_ip = bind_ip
@@ -122,6 +124,7 @@ class DHTServer(DHTClient):
     """
     DHT 服务端类，继承自 DHTClient 类
     """
+
     def __init__(self, bind_ip, bind_port):
         DHTClient.__init__(self, bind_ip, bind_port)
         self.rd = RedisClient()

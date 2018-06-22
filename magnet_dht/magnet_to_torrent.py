@@ -1,7 +1,6 @@
 #!usr/bin/python
 # encoding=utf8
 
-
 import subprocess
 from threading import Thread
 

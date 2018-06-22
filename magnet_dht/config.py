@@ -1,7 +1,6 @@
 # !usr/bin/python
 # encoding=utf8
 
-
 # 服务器 tracker
 BOOTSTRAP_NODES = [
     ("router.bittorrent.com", 6881),

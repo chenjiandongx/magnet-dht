@@ -1,18 +1,12 @@
 #!usr/bin/python
 # encoding=utf8
 
-
 import os
 import logging
 from struct import unpack
 from socket import inet_ntoa
 
-from .config import (
-    PER_NODE_LEN,
-    PER_NID_LEN,
-    PER_NID_NIP_LEN,
-    NEIGHBOR_END
-)
+from .config import PER_NODE_LEN, PER_NID_LEN, PER_NID_NIP_LEN, NEIGHBOR_END
 
 LOG_LEVEL = logging.INFO
 
@@ -60,6 +54,8 @@ def get_logger():
     logger = logging.getLogger("logger")
     logger.setLevel(LOG_LEVEL)
     fh = logging.StreamHandler()
-    fh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    fh.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
     logger.addHandler(fh)
     return logger
