@@ -7,6 +7,8 @@ from pprint import pprint
 
 from bencoder import bdecode
 
+TORRENT_SAVE_PATH = "torrents"
+
 
 class ParserTorrent:
 
@@ -15,6 +17,9 @@ class ParserTorrent:
 
     @staticmethod
     def get_meta_info(torrent):
+        """
+        返回解码后的 meta info 字典
+        """
         with open(torrent, "rb") as f:
             return bdecode(f.read())
 
@@ -45,12 +50,18 @@ class ParserTorrent:
         return filename.decode()
 
     def _get_multi_filename(self):
+        """
+        获取种子多个文件名
+        """
         files = self.meta_info[b"info"][b"files"]
         info = []
         for item in files:
             for k, v in item.items():
                 if isinstance(v, list):
-                    v = [i.decode() for i in v]
+                    try:
+                        v = [i.decode() for i in v]
+                    except:
+                        continue
                 elif isinstance(v, int):
                     v = round(v / 1024 / 1024, 2)
                 else:
@@ -78,9 +89,9 @@ class ParserTorrent:
 
 
 if __name__ == "__main__":
-    for root, dirs, files in os.walk("torrents"):
+    for root, dirs, files in os.walk(TORRENT_SAVE_PATH):
         for file in files:
-            torrent_info = ParserTorrent("torrents/" + file)
-            print("torrent", file)
+            torrent_info = ParserTorrent(os.path.join(TORRENT_SAVE_PATH, file))
+            print(TORRENT_SAVE_PATH, file)
             pprint(torrent_info.get_filename())
             print()
