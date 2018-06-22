@@ -6,10 +6,11 @@ import codecs
 import time
 from threading import Thread
 from collections import deque
+from multiprocessing import Process, cpu_count
 
 import bencoder
 
-from .config import (
+from magnet_dht.config import (
     BOOTSTRAP_NODES,
     MAX_NODE_QSIZE,
     UDP_RECV_BUFFSIZE,
@@ -19,10 +20,16 @@ from .config import (
     PER_NID_LEN,
     SLEEP_TIME,
 )
-from .utils import get_logger, get_nodes_info, get_rand_id, get_neighbor
-from .database import RedisClient
+from magnet_dht.utils import (
+    get_logger,
+    get_nodes_info,
+    get_rand_id,
+    get_neighbor,
+)
+from magnet_dht.database import RedisClient
 
 LOG = get_logger()
+REDIS = RedisClient()
 
 
 class HNode:
@@ -261,3 +268,13 @@ def start_server(port_offset):
     # 启动客户端
     dht.send_find_node_forever()
     dht.join()
+
+
+if __name__ == "__main__":
+    # 利用多进程运行程序，提升总体效率
+    processes = []
+    for i in range(cpu_count() - 7):
+        processes.append(Process(target=start_server, args=(i,)))
+
+    for p in processes:
+        p.start()

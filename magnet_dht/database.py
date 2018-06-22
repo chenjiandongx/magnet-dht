@@ -3,7 +3,7 @@
 
 import redis
 
-from .config import (
+from magnet_dht.config import (
     REDIS_KEY,
     REDIS_PORT,
     REDIS_PASSWORD,
@@ -26,4 +26,13 @@ class RedisClient:
         self.redis = redis.Redis(connection_pool=conn_pool)
 
     def add_magnet(self, magnet):
+        """
+        新增磁力链接
+        """
         self.redis.sadd(REDIS_KEY, magnet)
+
+    def get_magnets(self, count=128):
+        """
+        返回指定数量的磁力链接
+        """
+        return self.redis.srandmember(REDIS_KEY, count)
