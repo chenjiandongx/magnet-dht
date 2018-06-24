@@ -10,6 +10,14 @@ from multiprocessing import Process, cpu_count
 
 import bencoder
 
+from magnet_dht.utils import (
+    get_logger,
+    get_nodes_info,
+    get_rand_id,
+    get_neighbor,
+)
+from magnet_dht.database import RedisClient
+
 # 服务器 tracker
 BOOTSTRAP_NODES = [
     ("router.bittorrent.com", 6881),
@@ -31,18 +39,6 @@ MAGNET_PER = "magnet:?xt=urn:btih:{}"
 SLEEP_TIME = 0
 # 节点 id 长度
 PER_NID_LEN = 20
-
-
-from magnet_dht.utils import (
-    get_logger,
-    get_nodes_info,
-    get_rand_id,
-    get_neighbor,
-)
-from magnet_dht.database import RedisClient
-
-LOG = get_logger()
-REDIS = RedisClient()
 
 
 class HNode:
@@ -74,12 +70,13 @@ class DHTClient(Thread):
         )
         # UDP 地址绑定
         self.udp.bind((self.bind_ip, self.bind_port))
+        self.logger = get_logger("logger_{}".format(bind_port))
 
     def send_find_node_forever(self):
         """
         循环发送 find_node 请求
         """
-        LOG.info("Client Start Working...")
+        self.logger.info("Client Start Working...")
         while True:
             try:
                 # 弹出一个节点
@@ -147,7 +144,7 @@ class DHTServer(DHTClient):
 
     def __init__(self, bind_ip, bind_port):
         DHTClient.__init__(self, bind_ip, bind_port)
-        self.rd = RedisClient()
+        self.rc = RedisClient()
 
     def send_error(self, tid, address):
         """
@@ -164,7 +161,8 @@ class DHTServer(DHTClient):
         """
         # 使用 codecs 解码 info_hash
         hex_info_hash = codecs.getencoder("hex")(info_hash)[0].decode()
-        self.rd.add_magnet(MAGNET_PER.format(hex_info_hash))
+        self.rc.add_magnet(MAGNET_PER.format(hex_info_hash))
+        # self.logger.info("Add a new magnet.")
 
     def on_find_node_response(self, msg):
         """
@@ -253,7 +251,7 @@ class DHTServer(DHTClient):
         """
         启动服务端
         """
-        LOG.info("Start Server {}:{}".format(self.bind_ip, self.bind_port))
+        self.logger.info("Start Server {}:{}".format(self.bind_ip, self.bind_port))
         # 首先加入到 DHT 网络
         self.join_dht()
         while True:
@@ -266,7 +264,7 @@ class DHTServer(DHTClient):
                 self.on_message(msg, address)
                 time.sleep(SLEEP_TIME)
             except Exception as e:
-                LOG.warning(e)
+                self.logger.warning(e)
 
 
 def start_server(port_offset):
@@ -286,7 +284,7 @@ def start_server(port_offset):
 if __name__ == "__main__":
     # 利用多进程运行程序，提升总体效率
     processes = []
-    for i in range(cpu_count()):
+    for i in range(2):
         processes.append(Process(target=start_server, args=(i,)))
 
     for p in processes:

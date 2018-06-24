@@ -13,7 +13,7 @@ PER_NID_LEN = 20
 # 节点 id 和 ip 长度
 PER_NID_NIP_LEN = 24
 # 构造邻居随机结点
-NEIGHBOR_END = 10
+NEIGHBOR_END = 12
 # 日志等级
 LOG_LEVEL = logging.INFO
 
@@ -54,11 +54,11 @@ def get_nodes_info(nodes):
         yield (nid, ip, port)
 
 
-def get_logger():
+def get_logger(logger_name):
     """
     返回日志实例
     """
-    logger = logging.getLogger("logger")
+    logger = logging.getLogger(logger_name)
     logger.setLevel(LOG_LEVEL)
     fh = logging.StreamHandler()
     fh.setFormatter(
