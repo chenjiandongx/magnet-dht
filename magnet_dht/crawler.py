@@ -10,13 +10,13 @@ from multiprocessing import Process, cpu_count
 
 import bencoder
 
-from magnet_dht.utils import (
+from .utils import (
     get_logger,
     get_nodes_info,
     get_rand_id,
     get_neighbor,
 )
-from magnet_dht.database import RedisClient
+from .database import RedisClient
 
 # 服务器 tracker
 BOOTSTRAP_NODES = [
@@ -28,7 +28,7 @@ BOOTSTRAP_NODES = [
 # 双端队列容量
 MAX_NODE_QSIZE = 10000
 # UDP 报文 buffsize
-UDP_RECV_BUFFSIZE = 65536
+UDP_RECV_BUFFSIZE = 65535
 # 服务 host
 SERVER_HOST = "0.0.0.0"
 # 服务端口
@@ -39,26 +39,19 @@ MAGNET_PER = "magnet:?xt=urn:btih:{}"
 SLEEP_TIME = 0
 # 节点 id 长度
 PER_NID_LEN = 20
+# 是否使用全部进程
+ALL_PROCESSES = False
 
 
 class HNode:
-    """
-    DHT 节点类
-    """
-
     def __init__(self, nid, ip=None, port=None):
         self.nid = nid
         self.ip = ip
         self.port = port
 
 
-class DHTClient(Thread):
-    """
-    DHT 客户端类，继承自 Thread 类，负责发送请求。
-    """
-
+class DHTServer:
     def __init__(self, bind_ip, bind_port):
-        Thread.__init__(self)
         self.bind_ip = bind_ip
         self.bind_port = bind_port
         self.nid = get_rand_id()
@@ -70,22 +63,16 @@ class DHTClient(Thread):
         )
         # UDP 地址绑定
         self.udp.bind((self.bind_ip, self.bind_port))
+        # redis 客户端
+        self.rc = RedisClient()
         self.logger = get_logger("logger_{}".format(bind_port))
 
-    def send_find_node_forever(self):
+    def bootstrap(self):
         """
-        循环发送 find_node 请求
+        利用 tracker 服务器，伪装成 DHT 节点，加入 DHT 网络
         """
-        self.logger.info("Client Start Working...")
-        while True:
-            try:
-                # 弹出一个节点
-                node = self.nodes.popleft()
-                self.send_find_node((node.ip, node.port), node.nid)
-                time.sleep(SLEEP_TIME)
-            except IndexError:
-                # 一旦节点队列为空，则重新加入 DHT 网络
-                self.join_dht()
+        for address in BOOTSTRAP_NODES:
+            self.send_find_node(address)
 
     def send_krpc(self, msg, address):
         """
@@ -99,6 +86,13 @@ class DHTClient(Thread):
             self.udp.sendto(bencoder.bencode(msg), address)
         except:
             pass
+
+    def send_error(self, tid, address):
+        """
+        发送错误回复
+        """
+        msg = dict(t=tid, y="e", e=[202, "Server Error"])
+        self.send_krpc(msg, address)
 
     def send_find_node(self, address, nid=None):
         """
@@ -129,29 +123,20 @@ class DHTClient(Thread):
         )
         self.send_krpc(msg, address)
 
-    def join_dht(self):
+    def send_find_node_forever(self):
         """
-        利用 tracker 服务器，伪装成 DHT 节点，加入 DHT 网络
+        循环发送 find_node 请求
         """
-        for address in BOOTSTRAP_NODES:
-            self.send_find_node(address)
-
-
-class DHTServer(DHTClient):
-    """
-    DHT 服务端类，继承自 DHTClient 类
-    """
-
-    def __init__(self, bind_ip, bind_port):
-        DHTClient.__init__(self, bind_ip, bind_port)
-        self.rc = RedisClient()
-
-    def send_error(self, tid, address):
-        """
-        发送错误回复
-        """
-        msg = dict(t=tid, y="e", e=[202, "Server Error"])
-        self.send_krpc(msg, address)
+        self.logger.info("send find node forever...")
+        while True:
+            try:
+                # 弹出一个节点
+                node = self.nodes.popleft()
+                self.send_find_node((node.ip, node.port), node.nid)
+                time.sleep(SLEEP_TIME)
+            except IndexError:
+                # 一旦节点队列为空，则重新加入 DHT 网络
+                self.bootstrap()
 
     def save_magnet(self, info_hash):
         """
@@ -163,6 +148,44 @@ class DHTServer(DHTClient):
         hex_info_hash = codecs.getencoder("hex")(info_hash)[0].decode()
         self.rc.add_magnet(MAGNET_PER.format(hex_info_hash))
         # self.logger.info("Add a new magnet.")
+
+    def on_message(self, msg, address):
+        """
+        负责返回信息的处理
+
+        :param msg: 报文信息
+        :param address: 报文地址
+        """
+        try:
+            # `回复`
+            # 对应于 KPRC 消息字典中的 y 关键字的值是 r，包含了一个附加的关键字 r。
+            # 关键字 r 是字典类型，包含了返回的值。发送回复消息是在正确解析了请求消息的
+            # 基础上完成的。
+            if msg[b"y"] == b"r":
+                # nodes 是字符串类型，包含了被请求节点的路由表中最接近目标节点
+                # 的 K个最接近的节点的联系信息。
+                if msg[b"r"].get(b"nodes", None):
+                    self.on_find_node_response(msg)
+            # `请求`
+            # 对应于 KPRC 消息字典中的 y 关键字的值是 q，它包含 2 个附加的关键字
+            # q 和 a。关键字 q 是字符串类型，包含了请求的方法名字。关键字 a 一个字典
+            # 类型包含了请求所附加的参数。
+            # 而实际上我们只需要获取这两者中的 info hash，用于构造磁力链接进而获取种子。
+            elif msg[b"y"] == b"q":
+                # get_peers 与 torrent 文件的 info_hash 有关。这时 KPRC 协议中的
+                # "q" = "get_peers"。get_peers 请求包含 2 个参数。第一个参数是 id，
+                # 包含了请求节点的 ID。第二个参数是 info_hash，它代表 torrent 文件的 info_hash
+                if msg[b"q"] == b"get_peers":
+                    self.on_get_peers_request(msg, address)
+                # announce_peer 表明请求的节点正在某个端口下载 torrent
+                # 文件。announce_peer 包含 4 个参数。第一个参数是 id，包含了请求节点的 ID；
+                # 第二个参数是 info_hash，包含了 torrent 文件的 info_hash；第三个参数是 port
+                # 包含了整型的端口号，表明 peer 在哪个端口下载；第四个参数数是 token，
+                # 这是在之前的 get_peers 请求中收到的回复中包含的。
+                elif msg[b"q"] == b"announce_peer":
+                    self.on_announce_peer_request(msg, address)
+        except KeyError:
+            pass
 
     def on_find_node_response(self, msg):
         """
@@ -209,51 +232,13 @@ class DHTServer(DHTClient):
             # 没有对应的 info hash，发送错误回复
             self.send_error(tid, address)
 
-    def on_message(self, msg, address):
+    def receive_response_forever(self):
         """
-        负责返回信息的处理
-
-        :param msg: 报文信息
-        :param address: 报文地址
+        循环接受 udp 数据
         """
-        try:
-            # `回复`
-            # 对应于 KPRC 消息字典中的 y 关键字的值是 r，包含了一个附加的关键字 r。
-            # 关键字 r 是字典类型，包含了返回的值。发送回复消息是在正确解析了请求消息的
-            # 基础上完成的。
-            if msg[b"y"] == b"r":
-                # nodes 是字符串类型，包含了被请求节点的路由表中最接近目标节点
-                # 的 K个最接近的节点的联系信息。
-                if msg[b"r"].get(b"nodes", None):
-                    self.on_find_node_response(msg)
-            # `请求`
-            # 对应于 KPRC 消息字典中的 y 关键字的值是 q，它包含 2 个附加的关键字
-            # q 和 a。关键字 q 是字符串类型，包含了请求的方法名字。关键字 a 一个字典
-            # 类型包含了请求所附加的参数。
-            # 而实际上我们只需要获取这两者中的 info hash，用于构造磁力链接进而获取种子。
-            elif msg[b"y"] == b"q":
-                # get_peers 与 torrent 文件的 info_hash 有关。这时 KPRC 协议中的
-                # "q" = "get_peers"。get_peers 请求包含 2 个参数。第一个参数是 id，
-                # 包含了请求节点的 ID。第二个参数是 info_hash，它代表 torrent 文件的 info_hash
-                if msg[b"q"] == b"get_peers":
-                    self.on_get_peers_request(msg, address)
-                # announce_peer 表明请求的节点正在某个端口下载 torrent
-                # 文件。announce_peer 包含 4 个参数。第一个参数是 id，包含了请求节点的 ID；
-                # 第二个参数是 info_hash，包含了 torrent 文件的 info_hash；第三个参数是 port
-                # 包含了整型的端口号，表明 peer 在哪个端口下载；第四个参数数是 token，
-                # 这是在之前的 get_peers 请求中收到的回复中包含的。
-                elif msg[b"q"] == b"announce_peer":
-                    self.on_announce_peer_request(msg, address)
-        except KeyError:
-            pass
-
-    def run(self):
-        """
-        启动服务端
-        """
-        self.logger.info("Start Server {}:{}".format(self.bind_ip, self.bind_port))
+        self.logger.info("receive response forever {}:{}".format(self.bind_ip, self.bind_port))
         # 首先加入到 DHT 网络
-        self.join_dht()
+        self.bootstrap()
         while True:
             try:
                 # 接受返回报文
@@ -267,25 +252,31 @@ class DHTServer(DHTClient):
                 self.logger.warning(e)
 
 
-def start_server(port_offset):
+def _start_thread(offset):
     """
-    新开线程启动程序
+    启动线程
 
-    :param port_offset: 端口位移值
+    :param offset: 端口偏移值
     """
-    dht = DHTServer(SERVER_HOST, SERVER_PORT + port_offset)
-    # 启动服务端
-    dht.start()
-    # 启动客户端
-    dht.send_find_node_forever()
-    dht.join()
+    dht = DHTServer(SERVER_HOST, SERVER_PORT + offset)
+    Thread(target=dht.send_find_node_forever, ).start()
+    Thread(target=dht.receive_response_forever, ).start()
 
 
-if __name__ == "__main__":
-    # 利用多进程运行程序，提升总体效率
+def start_server():
+    """
+    多线程启动服务
+    """
+    max_process = 1
+    if ALL_PROCESSES:
+        max_process = cpu_count()
+
     processes = []
-    for i in range(2):
-        processes.append(Process(target=start_server, args=(i,)))
+    for i in range(max_process):
+        processes.append(Process(target=_start_thread, args=(i,)))
 
     for p in processes:
         p.start()
+
+    for p in processes:
+        p.join()

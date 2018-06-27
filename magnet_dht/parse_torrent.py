@@ -88,10 +88,10 @@ class ParserTorrent:
             return self.meta_info[b"created by"]
 
 
-if __name__ == "__main__":
+def parse_torrent():
     for root, dirs, files in os.walk(TORRENT_SAVE_PATH):
         for file in files:
-            torrent_info = ParserTorrent(os.path.join(TORRENT_SAVE_PATH, file))
+            info = ParserTorrent(os.path.join(TORRENT_SAVE_PATH, file))
             print(TORRENT_SAVE_PATH, file)
-            pprint(torrent_info.get_filename())
+            pprint(info.get_filename())
             print()

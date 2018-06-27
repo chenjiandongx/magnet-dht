@@ -4,9 +4,9 @@
 import subprocess
 from threading import Thread
 
-from magnet_dht.database import RedisClient
+from .database import RedisClient
 
-SAVE_PATH = "torrents"
+SAVE_PATH = ".\\torrents"
 STOP_TIMEOUT = 60
 MAX_CONCURRENT = 16
 MAX_MAGNETS = 256
@@ -47,7 +47,7 @@ def exec_cmd(magnet):
     )
 
 
-if __name__ == "__main__":
+def magnet2torrent():
     threads = []
     for magnet in get_magnets():
         th = Thread(target=exec_cmd, args=(magnet,))
