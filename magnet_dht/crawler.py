@@ -10,12 +10,7 @@ from multiprocessing import Process, cpu_count
 
 import bencoder
 
-from .utils import (
-    get_logger,
-    get_nodes_info,
-    get_rand_id,
-    get_neighbor,
-)
+from .utils import get_logger, get_nodes_info, get_rand_id, get_neighbor
 from .database import RedisClient
 
 # 服务器 tracker
@@ -44,6 +39,7 @@ ALL_PROCESSES = False
 
 
 class HNode:
+
     def __init__(self, nid, ip=None, port=None):
         self.nid = nid
         self.ip = ip
@@ -51,6 +47,7 @@ class HNode:
 
 
 class DHTServer:
+
     def __init__(self, bind_ip, bind_port):
         self.bind_ip = bind_ip
         self.bind_port = bind_port
@@ -236,7 +233,11 @@ class DHTServer:
         """
         循环接受 udp 数据
         """
-        self.logger.info("receive response forever {}:{}".format(self.bind_ip, self.bind_port))
+        self.logger.info(
+            "receive response forever {}:{}".format(
+                self.bind_ip, self.bind_port
+            )
+        )
         # 首先加入到 DHT 网络
         self.bootstrap()
         while True:
@@ -259,8 +260,8 @@ def _start_thread(offset):
     :param offset: 端口偏移值
     """
     dht = DHTServer(SERVER_HOST, SERVER_PORT + offset)
-    Thread(target=dht.send_find_node_forever, ).start()
-    Thread(target=dht.receive_response_forever, ).start()
+    Thread(target=dht.send_find_node_forever).start()
+    Thread(target=dht.receive_response_forever).start()
 
 
 def start_server():
