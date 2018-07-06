@@ -78,8 +78,6 @@ class ParserTorrent:
         else:
             return self._get_single_filename()
 
-        # 返回创建时间
-
     def get_createby(self):
         """
         返回创建种子创建时间
@@ -89,7 +87,7 @@ class ParserTorrent:
 
 
 def parse_torrent():
-    for root, dirs, files in os.walk(TORRENT_SAVE_PATH):
+    for _, _, files in os.walk(TORRENT_SAVE_PATH):
         for file in files:
             info = ParserTorrent(os.path.join(TORRENT_SAVE_PATH, file))
             print(TORRENT_SAVE_PATH, file)
