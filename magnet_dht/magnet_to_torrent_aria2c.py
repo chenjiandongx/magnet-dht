@@ -1,8 +1,8 @@
 #!usr/bin/python
 # encoding=utf8
 
-import subprocess
-from threading import Thread
+from http.client import HTTPConnection
+import json
 
 from .database import RedisClient
 
@@ -11,14 +11,9 @@ STOP_TIMEOUT = 60
 MAX_CONCURRENT = 16
 MAX_MAGNETS = 256
 
-CMD = (
-    "aria2c -d {save_path} "
-    "--bt-metadata-only=true "
-    "--bt-save-metadata=true "
-    "--listen-port=6881 "
-    "--max-concurrent-downloads={max_concurrent} "
-    '--bt-stop-timeout={stop_timeout} "{magnet}"'
-)
+ARIA2RPC_ADDR = "127.0.0.1"
+ARIA2RPC_PORT = 6800
+ARIA2RPC_TOKEN = None
 
 rd = RedisClient()
 
@@ -33,25 +28,40 @@ def get_magnets():
         yield m.decode()
 
 
-def exec_cmd(magnet):
+def exec_rpc(magnet):
     """
-    执行命令行操作
+    调用rpc
     """
-    subprocess.call(
-        CMD.format(
-            save_path=SAVE_PATH,
-            stop_timeout=STOP_TIMEOUT,
-            max_concurrent=MAX_CONCURRENT,
-            magnet=magnet,
-        )
-    )
+    conn = HTTPConnection(ARIA2RPC_ADDR, ARIA2RPC_PORT)
+    req = {
+        'jsonrpc':
+        '2.0',
+        'id':
+        "magnet",
+        'method':
+        "aria2.addUri",
+        'params': [[magnet], {
+            "bt-stop-timeout": "30",
+            "max-concurrent-downloads": str(MAX_CONCURRENT),
+            "listen-port": "6881",
+            "bt-metadata-only": True,
+            "bt-save-metadata": True,
+            "dir": SAVE_PATH,
+        }]
+    }
+    if ARIA2RPC_TOKEN:
+        req['params'].insert(0, "token:" + ARIA2RPC_TOKEN)
+
+    conn.request("POST", "/jsonrpc", json.dumps(req), {
+        "Content-Type": "application/json",
+    })
+
+    res = json.loads(conn.getresponse().read())
+    if "error" in res:
+        print("Aria2c replied with an error:", res["error"])
 
 
 def magnet2torrent():
-    threads = []
-    for magnet in get_magnets():
-        th = Thread(target=exec_cmd, args=(magnet,))
-        threads.append(th)
 
-    for th in threads:
-        th.start()
+    for magnet in get_magnets():
+        exec_rpc(magnet)
