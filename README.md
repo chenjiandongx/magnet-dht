@@ -72,7 +72,7 @@
 
 想自给自足获取磁力种子，Google 了一番，发现大家基本上的代码都是从 [simDHT](https://github.com/fanpei91/simDHT) 这个项目来的，首先这个项目很棒，但是些问题如代码不规范、实现细节基本没有一行注释、不兼容 Python3。然而很多网上同类的代码基本上也是对这个完全照搬....
 
-![眉头一皱](https://user-images.githubusercontent.com/19553554/42369313-29abfb50-813c-11e8-8524-2a75372615de.jpg)
+![眉头一皱](https://user-images.githubusercontent.com/19553554/42409921-ae3e7d98-8213-11e8-8c89-a15aaf7be224.png)
 
 所以我知道我要开始干活了
 
@@ -114,7 +114,7 @@ $ redis-cli
 
 ![好气喔](https://user-images.githubusercontent.com/19553554/42406126-467a2da4-81d4-11e8-82c8-527233485439.png)
 
-最后兜兜转转用到了 [aria2](https://github.com/aria2/aria2) 发现效率还可以。这里利用多线程跑一个命令。所以要先把 [aria2](https://github.com/aria2/aria2) 安装到你的 PATH 中，具体参考官网介绍。
+最后兜兜转转用到了 [aria2](https://github.com/aria2/aria2) 发现效率还可以。但是要先把 [aria2](https://github.com/aria2/aria2) 安装到你的 PATH 中，具体参考官网介绍。使用其 RPC 特性，节省线程开销。
 
 ![真香](https://user-images.githubusercontent.com/19553554/42406150-9676dec4-81d4-11e8-8c3d-6083a4f5a49b.png)
 
@@ -163,6 +163,11 @@ optional arguments:
   -s          run start_server func.
   -m          run magnet2torrent func
   -p          run parse_torrent func
+```
+
+**Note:** 在运行 `python manage.py -m` 的时候，要先开个终端窗口启动 aria2c 服务。
+```bash
+$ aria2c --enable-rpc=true --bt-metadata-only=true --bt-save-metadata=true
 ```
 
 ## 😃 深刻的感悟
