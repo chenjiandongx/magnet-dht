@@ -1,12 +1,14 @@
 # Python3 DHT 网络磁力种子爬虫
 
-## 严肃的理论
+## 😎严肃的理论
 
 ### 磁力链接
 
 现在我们使用迅雷等工具下载资源的时候，基本上都只需要一个叫做磁力链接的东西就可以了，非常方便。
 
 ![我仿佛听到了车鸣声](https://user-images.githubusercontent.com/19553554/42369819-a7cd8480-813d-11e8-9110-b371c2cb2b3d.jpg)
+
+**磁力定义**
 
 > 磁力链接是对等网络中进行信息检索和下载文档的电脑程序。和基于“位置”连接的统一资源定位符不同，磁力链接是基于元数据文件内容，属于统一资源名称。也就是说，磁力链接不基于文档的 IP 地址或定位符，而是在分布式数据库中，通过散列函数值来识别、搜索来下载文档。因为不依赖一个处于启动状态的主机来下载文档，所以特别适用没有中心服务器的对等网络。
 
@@ -34,17 +36,29 @@
 
 ![老司机 带带我](https://user-images.githubusercontent.com/19553554/42369745-74eb10a0-813d-11e8-9f65-10f141bc4dfc.jpg)
 
-> BitTorrent 协议的种子文件可以保存一组文件的元数据。这种格式的文件被 BitTorrent 协议所定义。扩展名一般为“.torrent”。BitTorrent 使用”分布式哈希表”(DHT)来为无 tracker 的种子(torrents)存储 peer 之间的联系信息。这样每个 peer 都成了 tracker。这个协议基于 Kademila 网络并且在 UDP 上实现。
+**种子定义**
 
-DHT 由节点组成，它存储了 peer 的位置。BitTorrent 客户端包含一个 DHT 节点，这个节点用来联系 DHT 中其他节点，从而得到 peer 的位置，进而通过 BitTorrent 协议下载。
+> BitTorrent 协议的种子文件可以保存一组文件的元数据。这种格式的文件被 BitTorrent 协议所定义。扩展名一般为“.torrent”。
+
+**种子结构**
+
+> .torrent 种子文件本质上是文本文件，包含 Tracker 信息和文件信息两部分。Tracker 信息主要是 BT 下载中需要用到的 Tracker 服务器的地址和针对 Tracker 服务器的设置，文件信息是根据对目标文件的计算生成的，计算结果根据 BitTorrent 协议内的 *Bencode* 规则进行编码。它的主要原理是需要把提供下载的文件虚拟分成大小相等的块，块大小必须为2k的整数次方（由于是虚拟分块，硬盘上并不产生各个块文件），并把每个块的索引信息和 Hash 验证码写入种子文件中；所以，种子文件就是被下载文件的“索引”。
+
+**种子-磁力联系**
+
+磁力链接的唯一标识符就是 40 个 16 进制字符码，也就是 `magnet:?xt=urn:btih:E7FC73D9E20697C6C440203F5884EF52F9E4BD28` 中的 `E7FC73D9E20697C6C440203F5884EF52F9E4BD28`。这个同时也是种子文件的 info_hash，是每个种子的唯一标识码。根据它就能将磁力链接于种子联系起来，得到资源的详细信息，进而下载资源。
+
+**DHT**
+
+> BitTorrent 使用”分布式哈希表”(DHT)来为无 tracker 的种子(torrents)存储 peer 之间的联系信息。这样每个 peer 都成了 tracker。这个协议基于 Kademila 网络并且在 UDP 上实现。DHT 由节点组成，它存储了 peer 的位置。BitTorrent 客户端包含一个 DHT 节点，这个节点用来联系 DHT 中其他节点，从而得到 peer 的位置，进而通过 BitTorrent 协议下载。
 
 * peer: 一个 TCP 端口上监听的客户端/服务器，它实现了 BitTorrent 协议。
 * 节点: 一个 UDP 端口上监听的客户端/服务器，它实现了 DHT(分布式哈希表) 协议。
 
-如果对 DHT 协议感兴趣的话一定要看下 [DHT 协议](http://www.bittorrent.org/beps/bep_0005.html) 的具体内容，这里有 [中文翻译版本](http://justjavac.com/other/2015/02/01/bittorrent-dht-protocol.html)。（想要彻底读懂项目的话一定要先了解该协议，代码都是基于该协议实现的）
+如果对 DHT 协议感兴趣的话一定要看下 [DHT 协议](http://www.bittorrent.org/beps/bep_0005.html) 的具体内容，这里有 [中文翻译版本](http://justjavac.com/other/2015/02/01/bittorrent-dht-protocol.html)。（想要彻底读懂项目的话一定要先了解该协议，代码都是基于该协议实现的，我也是反复的阅读了好几遍。）
 
 
-## 务实的实践
+## 😉务实的实践
 
 ### 项目来源
 
@@ -56,9 +70,9 @@ DHT 由节点组成，它存储了 peer 的位置。BitTorrent 客户端包含�
 
 ![渴望进步](https://user-images.githubusercontent.com/19553554/42373600-020b19a8-8148-11e8-9503-29ae3c9d9aff.jpg)
 
-想自给自足获取磁力种子，Google 了一番，发现大家基本上的代码都是从 [simDHT](https://github.com/fanpei91/simDHT) 这个项目来的，首先这个项目很棒，但是有个问题就是代码实现细节基本没有一行注释且不兼容 Python3。而很多网上同类的代码基本上也是对这个照搬....
+想自给自足获取磁力种子，Google 了一番，发现大家基本上的代码都是从 [simDHT](https://github.com/fanpei91/simDHT) 这个项目来的，首先这个项目很棒，但是些问题如代码不规范、实现细节基本没有一行注释、不兼容 Python3。然而很多网上同类的代码基本上也是对这个完全照搬....
 
-![](https://user-images.githubusercontent.com/19553554/42369313-29abfb50-813c-11e8-8524-2a75372615de.jpg)
+![眉头一皱](https://user-images.githubusercontent.com/19553554/42369313-29abfb50-813c-11e8-8524-2a75372615de.jpg)
 
 所以我知道我要开始干活了
 
@@ -68,6 +82,10 @@ DHT 由节点组成，它存储了 peer 的位置。BitTorrent 客户端包含�
 
 ![开开心心写代码](https://user-images.githubusercontent.com/19553554/42370122-83062ca0-813e-11e8-98cf-3c1177836042.gif)
 
+当然最后还是给码出来了啦
+
+![ojbk](https://user-images.githubusercontent.com/19553554/42405970-4e5ab53c-81d1-11e8-897f-6512081b3f5a.png)
+
 
 ### 项目结构
 
@@ -75,7 +93,11 @@ DHT 由节点组成，它存储了 peer 的位置。BitTorrent 客户端包含�
 
 * [crawler.py](https://github.com/chenjiandongx/magnet-dht/blob/master/magnet_dht/crawler.py)
 
-从 DHT 网络中获取磁力链接。主要是利用一些大型的服务器 tracker，冒充 DHT 节点，使用 UDP 协议加入到 DHT 网络中一波搜索以及和其他节点搞好关系，让他们也分享我点资源。磁力数据存放在了 redis，利用 redis 的集合特性来去重。使用了多线程/多进程，用于提高爬取效率。在我的本地机器（i7-7700HQ/16G 内存/8M 网速）跑了一下，效果还不错，4 小时爬了 100 万条磁力链接。
+从 DHT 网络中获取磁力链接。主要是利用一些大型的服务器 tracker，冒充 DHT 节点，使用 UDP 协议加入到 DHT 网络中搜索一波以及和其他节点搞好关系，让他们也分享我点资源。
+
+![大哥喝可乐](https://user-images.githubusercontent.com/19553554/42406024-5b84186a-81d2-11e8-9ab9-b69762ea4186.jpg)
+
+磁力数据存放在了 redis，利用 redis 的集合特性来去重。使用了多线程/多进程，用于提高爬取效率。在我的本地机器（i7-7700HQ/16G 内存/8M 网速）跑了一下，效果还不错，4 小时爬了 100 万条磁力链接。
 
 ```bash
 $ redis-cli
@@ -94,11 +116,11 @@ $ redis-cli
 
 最后兜兜转转用到了 [aria2](https://github.com/aria2/aria2) 发现效率还可以。这里利用多线程跑一个命令。所以要先把 [aria2](https://github.com/aria2/aria2) 安装到你的 PATH 中，具体参考官网介绍。
 
-![饭真香](https://user-images.githubusercontent.com/19553554/42375716-fe89a996-814e-11e8-8daf-d77b50fa1d70.png)
+![真香](https://user-images.githubusercontent.com/19553554/42375716-fe89a996-814e-11e8-8daf-d77b50fa1d70.png)
 
 * [parse_torrent.py](https://github.com/chenjiandongx/magnet-dht/blob/master/magnet_dht/parse_torrent.py)
 
-解析种子文件内容，同样也是利用了 bencoder 进行解码。有了种子我们当然要看看到底是些什么资源了啦。你说世界就是这么小，在我解析出来的几百个种子文件中，居然有几个都是一个社区的，那个以 1024 为标志的社区。
+解析种子文件内容，同样也是利用了 Bencode 进行解码。有了种子我们当然要看看到底是些什么资源了啦。你说世界就是这么小，在我解析出来的几百个种子文件中，居然有几个都是一个社区的，那个以 1024 为标志的社区。
 
 ![还有这种操作](https://user-images.githubusercontent.com/19553554/42372044-c5debb5a-8143-11e8-8feb-99fa06d1813a.png)
 
@@ -120,17 +142,17 @@ $ redis-cli
 
 **获取源码及安装依赖环境**
 
+确保已经安装好 redis，redis 的具体配置可以在 database.py 里面修改
 ```bash
 $ git clone https://github.com/chenjiandongx/magnet-dht.git
 $ cd magnet-dht
 $ pip install -r requirements.txt
-# 确保已经安装好 redis，redis 的具体配置可以在 database.py 里面修改。
 ```
 
 **运行项目**
 
+进程数量可以在 crawler.py 进行调整
 ```bash
-# 至于进程数量可以在 crawler.py 进行调整
 $ python manage.py -h
 usage: manage.py [-h] [-s] [-m] [-p]
 
@@ -143,9 +165,13 @@ optional arguments:
   -p          run parse_torrent func
 ```
 
-## 深刻的感悟
+## 😃深刻的感悟
 
-自我学编程以来，我一直都是属于兴趣驱动的，对某种技术感兴趣的话就会花时间去研究去尝试。想成为一个有趣的人，去做一些有趣的事，真心觉得能把脑海里的想法转变为代码实现是件很棒的事，即使可能这件事在别人看来并没有什么了不起。技术发展变化总是那么快，不紧跟着可能不小心就掉队了。所以希望每个真心热爱编程的人都能不忘初心，永远保持对新技术的热情，永远能从编码中找到乐趣。
+自我接触编程以来，我一直都是属于兴趣驱动的，对某种技术感兴趣的话就会花时间去研究去尝试。想成为一个有趣的人，去做一些有趣的事。
+
+![有趣的灵魂](https://user-images.githubusercontent.com/19553554/42406008-0014fcd8-81d2-11e8-8af6-544510e59712.jpg)
+
+真心觉得能把脑海里的想法转变为代码实现是件很棒的事，即使可能这件事在别人看来并没有什么了不起。技术发展变化总是那么快，不紧跟着可能不小心就掉队了。所以希望每个真心热爱编程的人都能不忘初心，永远保持对新技术的热情，永远能从编码中找到乐趣。
 
 ![stay real, stay wild](https://user-images.githubusercontent.com/19553554/42375144-2c90600c-814d-11e8-9824-2d5433c8e19c.png)
 
