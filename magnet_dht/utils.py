@@ -13,7 +13,7 @@ PER_NID_LEN = 20
 # 节点 id 和 ip 长度
 PER_NID_NIP_LEN = 24
 # 构造邻居随机结点
-NEIGHBOR_END = 12
+NEIGHBOR_END = 14
 # 日志等级
 LOG_LEVEL = logging.INFO
 
