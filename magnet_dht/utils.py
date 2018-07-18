@@ -27,7 +27,8 @@ def get_rand_id():
 
 def get_neighbor(target):
     """
-    生成随机 target 周边节点 id
+    生成随机 target 周边节点 id，在 Kademlia 网络中，距离是通过异或(XOR)计算的，
+    结果为无符号整数。distance(A, B) = |A xor B|，值越小表示越近。
 
     :param target: 节点 id
     """

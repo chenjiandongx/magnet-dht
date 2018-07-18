@@ -51,11 +51,11 @@ SERVER_PORT = 9090
 # 磁力链接前缀
 MAGNET_PER = "magnet:?xt=urn:btih:{}"
 # while 循环休眠时间
-SLEEP_TIME = 0
+SLEEP_TIME = 1e-10
 # 节点 id 长度
 PER_NID_LEN = 20
 # 是否使用全部进程
-MAX_PROCESSES = 1 or cpu_count()
+MAX_PROCESSES = cpu_count() // 2 or cpu_count()
 
 
 class HNode:
@@ -68,9 +68,10 @@ class HNode:
 
 class DHTServer:
 
-    def __init__(self, bind_ip, bind_port):
+    def __init__(self, bind_ip, bind_port, process_id):
         self.bind_ip = bind_ip
         self.bind_port = bind_port
+        self.process_id = process_id
         self.nid = get_rand_id()
         # nodes 节点是一个双端队列
         self.nodes = deque(maxlen=MAX_NODE_QSIZE)
@@ -165,7 +166,8 @@ class DHTServer:
         hex_info_hash = codecs.getencoder("hex")(info_hash)[0].decode()
         magnet = MAGNET_PER.format(hex_info_hash)
         self.rc.add_magnet(magnet)
-        self.logger.info(magnet)
+        # self.logger.info("pid " + str(self.process_id) + " - " + magnet)
+        self.logger.info("pid_{0} - {1}".format(self.process_id, magnet))
 
     def on_message(self, msg, address):
         """
@@ -280,7 +282,7 @@ def _start_thread(offset):
 
     :param offset: 端口偏移值
     """
-    dht = DHTServer(SERVER_HOST, SERVER_PORT + offset)
+    dht = DHTServer(SERVER_HOST, SERVER_PORT + offset, offset)
     Thread(target=dht.send_find_node_forever).start()
     Thread(target=dht.receive_response_forever).start()
 
