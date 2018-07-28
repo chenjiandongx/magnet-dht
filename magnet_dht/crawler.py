@@ -41,7 +41,7 @@ BOOTSTRAP_NODES = [
 ]
 
 # 双端队列容量
-MAX_NODE_QSIZE = 100000
+MAX_NODE_QSIZE = 10000
 # UDP 报文 buffsize
 UDP_RECV_BUFFSIZE = 65535
 # 服务 host
@@ -51,7 +51,7 @@ SERVER_PORT = 9090
 # 磁力链接前缀
 MAGNET_PER = "magnet:?xt=urn:btih:{}"
 # while 循环休眠时间
-SLEEP_TIME = 1e-10
+SLEEP_TIME = 1e-6
 # 节点 id 长度
 PER_NID_LEN = 20
 # 是否使用全部进程
@@ -91,6 +91,18 @@ class DHTServer:
         """
         for address in BOOTSTRAP_NODES:
             self.send_find_node(address)
+
+    def bs_timer(self):
+        """
+        定时执行 bootstrap()
+        """
+        t = 1
+        while True:
+            if t % 10 == 0:
+                t = 1
+                self.bootstrap()
+            t += 1
+            time.sleep(1)
 
     def send_krpc(self, msg, address):
         """
@@ -283,8 +295,17 @@ def _start_thread(offset):
     :param offset: 端口偏移值
     """
     dht = DHTServer(SERVER_HOST, SERVER_PORT + offset, offset)
-    Thread(target=dht.send_find_node_forever).start()
-    Thread(target=dht.receive_response_forever).start()
+    threads = [
+        Thread(target=dht.send_find_node_forever),
+        Thread(target=dht.receive_response_forever),
+        Thread(target=dht.bs_timer)
+    ]
+
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
 
 
 def start_server():
