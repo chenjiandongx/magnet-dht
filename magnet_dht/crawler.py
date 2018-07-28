@@ -51,9 +51,11 @@ SERVER_PORT = 9090
 # 磁力链接前缀
 MAGNET_PER = "magnet:?xt=urn:btih:{}"
 # while 循环休眠时间
-SLEEP_TIME = 1e-6
+SLEEP_TIME = 1e-5
 # 节点 id 长度
 PER_NID_LEN = 20
+# 执行 bs 定时器间隔（秒）
+PER_SEC_BS_TIMER = 8
 # 是否使用全部进程
 MAX_PROCESSES = cpu_count() // 2 or cpu_count()
 
@@ -98,7 +100,7 @@ class DHTServer:
         """
         t = 1
         while True:
-            if t % 10 == 0:
+            if t % PER_SEC_BS_TIMER == 0:
                 t = 1
                 self.bootstrap()
             t += 1
