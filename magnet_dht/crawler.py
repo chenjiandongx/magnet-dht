@@ -216,9 +216,8 @@ class DHTServer:
                 # 第二个参数是 info_hash，包含了 torrent 文件的 info_hash；第三个参数是 port
                 # 包含了整型的端口号，表明 peer 在哪个端口下载；第四个参数数是 token，
                 # 这是在之前的 get_peers 请求中收到的回复中包含的。
-                # 本爬虫目的暂时只是爬取磁链，此方法暂时忽略
-                # elif msg[b"q"] == b"announce_peer":
-                #     self.on_announce_peer_request(msg, address)
+                elif msg[b"q"] == b"announce_peer":
+                    self.on_announce_peer_request(msg, address)
         except KeyError:
             pass
 
@@ -255,11 +254,19 @@ class DHTServer:
     def on_announce_peer_request(self, msg, address):
         """
         处理 get_announce 请求，获取 info hash，address, port
+        本爬虫目的暂时只是爬取磁链，所以忽略 address, port 有需要的
+        开发者可自行完善这部分内容
 
         :param msg: 节点报文信息
         :param address: 节点地址
         """
-        pass
+        tid = msg[b"t"]
+        try:
+            info_hash = msg[b"a"][b"info_hash"]
+            self.save_magnet(info_hash)
+        except KeyError:
+            # 没有对应的 info hash，发送错误回复
+            self.send_error(tid, address)
 
     def receive_response_forever(self):
         """
