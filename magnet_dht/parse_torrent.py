@@ -11,7 +11,6 @@ TORRENT_SAVE_PATH = "torrents"
 
 
 class ParserTorrent:
-
     def __init__(self, torrent):
         self.meta_info = self.get_meta_info(torrent)
 

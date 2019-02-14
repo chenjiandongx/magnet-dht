@@ -47,11 +47,11 @@ def get_nodes_info(nodes):
         return []
 
     for i in range(0, length, PER_NODE_LEN):
-        nid = nodes[i:i + PER_NID_LEN]
+        nid = nodes[i : i + PER_NID_LEN]
         # 利用 inet_ntoa 可以返回节点 ip
-        ip = inet_ntoa(nodes[i + PER_NID_LEN:i + PER_NID_NIP_LEN])
+        ip = inet_ntoa(nodes[i + PER_NID_LEN : i + PER_NID_NIP_LEN])
         # 解包返回节点端口
-        port = unpack("!H", nodes[i + PER_NID_NIP_LEN:i + PER_NODE_LEN])[0]
+        port = unpack("!H", nodes[i + PER_NID_NIP_LEN : i + PER_NODE_LEN])[0]
         yield (nid, ip, port)
 
 
@@ -62,8 +62,6 @@ def get_logger(logger_name):
     logger = logging.getLogger(logger_name)
     logger.setLevel(LOG_LEVEL)
     fh = logging.StreamHandler()
-    fh.setFormatter(
-        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    )
+    fh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger.addHandler(fh)
     return logger

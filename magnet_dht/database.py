@@ -16,10 +16,7 @@ REDIS_MAX_CONNECTION = 20
 
 
 class RedisClient:
-
-    def __init__(
-        self, host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD
-    ):
+    def __init__(self, host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD):
         conn_pool = redis.ConnectionPool(
             host=host,
             port=port,

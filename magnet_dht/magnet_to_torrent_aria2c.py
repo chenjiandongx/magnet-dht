@@ -48,10 +48,7 @@ def exec_rpc(magnet):
         ],
     }
     conn.request(
-        "POST",
-        "/jsonrpc",
-        json.dumps(req),
-        {"Content-Type": "application/json"},
+        "POST", "/jsonrpc", json.dumps(req), {"Content-Type": "application/json"}
     )
 
     res = json.loads(conn.getresponse().read())

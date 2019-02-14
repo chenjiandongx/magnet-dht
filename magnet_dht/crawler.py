@@ -61,7 +61,6 @@ MAX_PROCESSES = cpu_count() // 2 or cpu_count()
 
 
 class HNode:
-
     def __init__(self, nid, ip=None, port=None):
         self.nid = nid
         self.ip = ip
@@ -69,7 +68,6 @@ class HNode:
 
 
 class DHTServer:
-
     def __init__(self, bind_ip, bind_port, process_id):
         self.bind_ip = bind_ip
         self.bind_port = bind_port
@@ -78,9 +76,7 @@ class DHTServer:
         # nodes 节点是一个双端队列
         self.nodes = deque(maxlen=MAX_NODE_QSIZE)
         # KRPC 协议是由 bencode 编码组成的一个简单的 RPC 结构，使用 UDP 报文发送。
-        self.udp = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
-        )
+        self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         # UDP 地址绑定
         self.udp.bind((self.bind_ip, self.bind_port))
         # redis 客户端
@@ -273,9 +269,7 @@ class DHTServer:
         循环接受 udp 数据
         """
         self.logger.info(
-            "receive response forever {}:{}".format(
-                self.bind_ip, self.bind_port
-            )
+            "receive response forever {}:{}".format(self.bind_ip, self.bind_port)
         )
         # 首先加入到 DHT 网络
         self.bootstrap()
@@ -302,7 +296,7 @@ def _start_thread(offset):
     threads = [
         Thread(target=dht.send_find_node_forever),
         Thread(target=dht.receive_response_forever),
-        Thread(target=dht.bs_timer)
+        Thread(target=dht.bs_timer),
     ]
 
     for t in threads:
