@@ -1,5 +1,5 @@
 #! usr/bin/python
-# encoding=utf8
+# encoding=utf-8
 
 import socket
 import codecs

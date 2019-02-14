@@ -15,7 +15,6 @@ def get_parser():
     parser = argparse.ArgumentParser(description="start manage.py with flag.")
     parser.add_argument("-s", action="store_true", help="run start_server func.")
     parser.add_argument("-m", action="store_true", help="run magnet2torrent func")
-
     parser.add_argument("-p", action="store_true", help="run parse_torrent func")
     return parser
 
